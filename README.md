@@ -61,56 +61,27 @@
 ```mermaid
 erDiagram
     Players {
-        player_id int PK
-        name varchar(255)
-        level int
-        experience int
-        registration_date datetime
-        last_online datetime
+
     }
 
     Clans {
-        clan_id int PK
-        name varchar(255)
-        leader_id int FK
-        creation_date datetime
-        motto varchar(255)
-        level int
+
     }
 
     ClanResources {
-        resource_id int PK
-        clan_id int FK
-        resource_type varchar(50)
-        amount int
-        last_updated datetime
+
     }
 
     ClanMembers {
-        member_id int PK
-        player_id int FK
-        clan_id int FK
-        role varchar(50)
-        join_date datetime
-        contribution int
+
     }
 
     ActionLogs {
-        log_id int PK
-        player_id int FK
-        clan_id int FK
-        action_type varchar(50)
-        action_date datetime
-        details text
+
     }
 
     ClanApplications {
-        application_id int PK
-        player_id int FK
-        clan_id int FK
-        application_date datetime
-        status varchar(20)
-        processed_by int FK
+
     }
 
     Players ||--o{ ClanMembers : "является участником"

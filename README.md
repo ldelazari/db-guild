@@ -276,6 +276,7 @@ UNIQUE (clan_id, resource_type);
 ALTER TABLE ClanApplications ADD CONSTRAINT unique_pending_application 
 UNIQUE (player_id, clan_id) WHERE status = 'рассматривается';
 ```
+
 # 🎮 Скрипты для управления игровыми кланами
 
 ## 📌 Содержание
@@ -294,3 +295,110 @@ INSERT INTO Players (name, level, experience)
 VALUES (:name, :level, :exp)
 RETURNING player_id;
 ```
+**Параметры**:
+- `name` - имя игрока
+- `level` - начальный уровень (1-100)
+- `exp` - начальный опыт
+
+### Обновление активности
+```sql
+UPDATE Players 
+SET last_online = CURRENT_TIMESTAMP 
+WHERE player_id = :player_id;
+```
+
+## 🏰 Управление кланами
+
+### Создание клана
+```sql
+WITH new_clan AS (
+    INSERT INTO Clans (name, leader_id, motto)
+    VALUES (:clan_name, :leader_id, :motto)
+    RETURNING clan_id
+)
+INSERT INTO ClanMembers (player_id, clan_id, role)
+SELECT :leader_id, clan_id, 'лидер' FROM new_clan;
+```
+
+### Повышение уровня
+```sql
+UPDATE Clans
+SET level = level + 1
+WHERE clan_id = :clan_id
+AND level < 50;
+```
+
+## 💰 Управление ресурсами
+
+### Пополнение ресурсов
+```sql
+INSERT INTO ClanResources (clan_id, resource_type, amount)
+VALUES (:clan_id, :res_type, :amount)
+ON CONFLICT (clan_id, resource_type)
+DO UPDATE SET 
+    amount = ClanResources.amount + EXCLUDED.amount,
+    last_updated = CURRENT_TIMESTAMP;
+```
+
+### Проверка баланса
+```sql
+SELECT resource_type, amount 
+FROM ClanResources
+WHERE clan_id = :clan_id;
+```
+
+## 👥 Управление участниками
+
+### Принятие заявки
+```sql
+BEGIN;
+UPDATE ClanApplications
+SET status = 'принята', processed_by = :moderator_id
+WHERE application_id = :app_id;
+
+INSERT INTO ClanMembers (player_id, clan_id)
+VALUES (:player_id, :clan_id);
+COMMIT;
+```
+
+### Исключение участника
+```sql
+DELETE FROM ClanMembers
+WHERE clan_id = :clan_id 
+AND player_id = :player_id
+AND role != 'лидер';
+```
+
+## 📝 Логирование действий
+
+### Запись действия
+```sql
+INSERT INTO ActionLogs (player_id, clan_id, action_type, details)
+VALUES (:player_id, :clan_id, :action_type, :details::jsonb);
+```
+
+### Просмотр логов
+```sql
+SELECT a.action_date, p.name, a.action_type
+FROM ActionLogs a
+JOIN Players p ON a.player_id = p.player_id
+WHERE a.clan_id = :clan_id
+ORDER BY a.action_date DESC
+LIMIT 100;
+```
+
+## ⚙️ Администрирование
+
+### Резервное копирование (bash)
+```bash
+pg_dump -U postgres clan_db > clan_backup_$(date +%Y-%m-%d).sql
+```
+
+### Восстановление (bash)
+```bash
+psql -U postgres clan_db < clan_backup_2023-11-15.sql
+```
+
+---
+
+> 💡 Все скрипты проверены на PostgreSQL 15+. Для выполнения требуются соответствующие права доступа к БД.

@@ -1,0 +1,1 @@
+pg_dump -U postgres clan_db > clan_backup_$(date +%Y-%m-%d).sql

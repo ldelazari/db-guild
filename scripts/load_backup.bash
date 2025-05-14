@@ -1,0 +1,1 @@
+psql -U postgres clan_db < clan_backup_2023-11-15.sql
